@@ -58,12 +58,10 @@ void setup() {
 void loop() {
   
   float red, green, blue;
-
-  orangeFilter.write(initPos);
-
+  
   tcs.setInterrupt(false);  // turn on LED
 
-  delay(60);  // takes 50ms to read
+  delay(60);  // takes 60ms to read
 
   tcs.getRGB(&red, &green, &blue);
 
@@ -100,7 +98,7 @@ void loop() {
         delay(4000);
         Serial.println("");
       }
-      delay(1000);
+      delay(1500);
     break;
   }
 }
@@ -122,6 +120,8 @@ int newOrange(){
   Serial.print("MACHINE: Letting in a new orange...");
   Serial.println("");
   orangeFilter.write(openPos);  // No detection rotate 90 to let an Orange in (after 3 checks);
+  delay(1000);
+  orangeFilter.write(initPos);
 }
 
 int orangeSlider(int orangeStatus){
@@ -142,5 +142,7 @@ int orangeSlider(int orangeStatus){
     Serial.print("MACHINE: Moving back to initial position...");
     Serial.println("");
     orangeFate.write(initPos); // Go to initial Position
-  } 
+  }
+  delay(1000);
+  newOrange();
 }
