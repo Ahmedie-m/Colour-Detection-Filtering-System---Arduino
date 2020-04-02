@@ -1,3 +1,10 @@
 $( document ).ready(function() {
-    console.log("ready")
+    arduinoData = {
+        displayRipe: function () {
+            console.log("ripe clicked")
+        },
+        displayRaw: function () {
+            console.log("raw clicked")
+        },
+    }
 });
