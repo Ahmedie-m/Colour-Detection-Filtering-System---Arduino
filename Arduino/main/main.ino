@@ -13,6 +13,13 @@ int ripeTotal = 0;
 int rawTotal = 0;
 int notDetectedCheck = 0;
 String postApiKey = "EIVSNOCRGC5SOS5Q";
+boolean isOrangeInDetection = false;
+
+// pins
+int ultrasonicPins[2][2] {
+  {5, 6}, // Fruit Detection
+  {9, 10}, // Slider Detection
+};
 
 
 // initialize
@@ -56,15 +63,14 @@ void setup() {
   orangeFilter.attach(3);
   // drive servo in basic
   orangeFilter.write(0);
-  // Servo 2 is connected to PWM pin 5
-  orangeFate.attach(5);
+  // Servo 2 is connected to PWM pin 11
+  orangeFate.attach(11);
   // drive servo in basic
   orangeFate.write(0);
   delay(1000);
 }
 
 void loop() {
-  
   float red, green, blue;
   
   tcs.setInterrupt(false);  // turn on LED
@@ -75,7 +81,16 @@ void loop() {
 
   tcs.setInterrupt(true);  // turn off LED
 
-  ledControl();
+  if(Serial.available() > 0 ){
+    int com = Serial.read();
+    Serial.println(com - 48); // Arduino uses ACSII numbering, we need to minus 48
+    if (com == 0) {
+      ledControl(true); // turn off LED
+    }
+    if (com == 1) {
+      ledControl(false); // turn on LED
+    }
+  }
   
   Serial.print("\tR:\t"); Serial.print(int(red));
   Serial.print("\tG:\t"); Serial.print(int(green));
@@ -107,17 +122,8 @@ void loop() {
   }
 }
 
-int ledControl(){
-  if(Serial.available() > 0 ){
-    int com = Serial.read();
-    Serial.println(com - 48); // Arduino uses ACSII numbering, we need to minus 48
-    if (com == 0) {
-      tcs.setInterrupt(true);  // turn off LED
-    }
-    if (com == 1) {
-      tcs.setInterrupt(false);  // turn on LED
-    }
-  }
+int ledControl(boolean action){
+  tcs.setInterrupt(action);
 }
 
 int newOrange(){
@@ -128,17 +134,26 @@ int newOrange(){
 }
 
 int orangeSlider(int orangeStatus){
+  int sliderLocation; 
   if(orangeStatus == 1){
     Serial.println("MACHINE: Moving to ripe box...");
     orangeFate.write(ripePos);    // Rotate 90 to let the Orange in Ripe Box
-    delay(5000);                 // Wait 5 sec
+    while (sliderLocation > 7) {
+      sliderLocation = ultrasonicDetect(1);
+      Serial.print("The slider is ");
+      Serial.println(sliderLocation);
+    }
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos);  // Go to initial Position
   }
   if(orangeStatus == 0){
     Serial.println("MACHINE: Moving to raw box...");
     orangeFate.write(rawPos);    // Rotate 180 to let the Orange in Raw Box
-    delay(5000);                // Wait 5 sec
+    while (sliderLocation > 14) {
+      sliderLocation = ultrasonicDetect(1);
+      Serial.print("The slider is ");
+      Serial.println(sliderLocation);
+    }              
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos); // Go to initial Position
   }
@@ -160,5 +175,50 @@ void postToThingSpeak(int value, int chartNum) {
 
   // do nothing until the process finishes, so you get the whole output:
   while(p.running());
-  delay(3500); // we need to wait awhile for each request
+  delay(5000); // we need to wait 15 seconds with the free plan before each request
+}
+
+int ultrasonicDetect(int slider) {
+  long duration;
+  int trigPin, echoPin, cm;
+
+  switch(slider){
+    case 1:
+    trigPin = ultrasonicPins[1][0];
+    echoPin = ultrasonicPins[1][1];
+    break;
+    case 0:
+    trigPin = ultrasonicPins[0][0];
+    echoPin = ultrasonicPins[0][1];
+    break;
+  }
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(5);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+ 
+  // Read the signal from the sensor: a HIGH pulse whose
+  // duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(echoPin, INPUT);
+  duration = pulseIn(echoPin, HIGH);
+ 
+  // Convert the time into a distance
+  cm = (duration/2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
+
+  delay(500);
+
+  return cm;
+}
+
+void addLogTitle (String) {
+
+
 }
