@@ -58,7 +58,7 @@ Restart the uhttpd server
 
 Your website should be on your Arduino's Address
 
-Ex: 192.168.1.165/stats/
+Ex: `192.168.1.165/stats/`
 
 ## Credits
 
