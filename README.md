@@ -52,7 +52,7 @@ Then create the table
 
 Then insert some filler data
 
-`INSERT INTO sensor_data (type,red,green,blue) VALUES ('ripe', '150', '20', '20');`
+`INSERT INTO sensor_data (type, red, green, blue) VALUES ('ripe', '150', '20', '20');`
 
 Then display the contents of the table
 
