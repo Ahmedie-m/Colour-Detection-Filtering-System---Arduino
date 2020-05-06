@@ -32,13 +32,15 @@ float detectOrange(float red, float green, float blue){
   if(( red >  130 )  &&  ( green <  100 )  &&  ( blue <  60 )){
     notDetectedCheck = 0;
     ripeTotal++;
-    postToThingSpeak(ripeTotal, 1);
+    // postToThingSpeak(ripeTotal, 1);
+    updateArduinoDatabase("ripe", red, green, blue);
     return 1; // ripe
   }
   if(( red < 100 )  &&  ( green >  100 )  &&  ( blue <  100 )){
     notDetectedCheck = 0;
     rawTotal++;
-    postToThingSpeak(rawTotal, 2);
+    // postToThingSpeak(rawTotal, 2);
+    updateArduinoDatabase("raw", red, green, blue);
     return 0; // raw
   }
   else{
@@ -176,6 +178,16 @@ void postToThingSpeak(int value, int chartNum) {
   // do nothing until the process finishes, so you get the whole output:
   while(p.running());
   delay(5000); // we need to wait 15 seconds with the free plan before each request
+}
+
+void updateArduinoDatabase(String type, int red, int green, int blue) {
+  Process p;              
+  p.begin("/mnt/sda1/sensor.php");      
+  p.addParameter(String(type));
+  p.addParameter(String(red));
+  p.addParameter(String(green));
+  p.addParameter(String(blue));
+  p.run();
 }
 
 int ultrasonicDetect(int slider) {

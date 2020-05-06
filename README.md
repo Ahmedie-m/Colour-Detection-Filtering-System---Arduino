@@ -58,6 +58,22 @@ Then display the contents of the table
 
 `SELECT * FROM sensor_data`
 
+### Creating the PHP-file that takes in the query
+
+Create the PHP file in the following area
+
+`nano /mnt/sda1/sensor.php`
+
+Insert this code
+
+`#!/usr/bin/php-cli
+`<?php
+`$db = new SQLite3('/mnt/sda1/sensor.db');
+`$query = "INSERT INTO sensor_data (type, red, green, blue) VALUES( '$argv[1]', '$argv[2]', '$argv[3]', '$argv[4]' )";
+`$db->exec($query);
+`$db->close();
+`?>
+
 ## Development
 
 Anything in the www folder on your Arduino Yun is your website
