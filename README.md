@@ -1,6 +1,6 @@
-# Colour-Detection-Filtering-System
+# Colour Detection & Filtering System - Arduino Code
 
-Detecting if an orange is raw or ripe then moving it to the appropriate box
+This is the Arduino part of the development for my bachelor thesis device that sorts an orange by its ripeness
 
 ## Installing Dependencies
 
