@@ -28,7 +28,7 @@ Install nano
 
 `opkg install nano`
 
-## Editing the uhttpd configuration file
+### Editing the uhttpd configuration file
 
 Do
 
@@ -39,6 +39,24 @@ Then add
 `list interpreter ".php=/usr/bin/php-cgi"`
 
 `option index_page 'index.php'`
+
+### Creating the database file
+
+Do
+
+`sqlite3 /mnt/sda1/sensor.db`
+
+Then create the table
+
+`CREATE TABLE "sensor_data" (id INTEGER PRIMARY KEY AUTOINCREMENT, type text, red INTEGER, green INTEGER, blue INTEGER, time DATETIME DEFAULT CURRENT_TIMESTAMP);`
+
+Then insert some filler data
+
+`INSERT INTO sensor_data (type,red,green,blue) VALUES ('ripe', '150', '20', '20');`
+
+Then display the contents of the table
+
+`SELECT * FROM sensor_data`
 
 ## Development
 
