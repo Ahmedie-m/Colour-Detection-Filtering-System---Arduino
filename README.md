@@ -66,13 +66,15 @@ Create the PHP file in the following area
 
 Insert this code
 
-`#!/usr/bin/php-cli`
-`<?php`
-`$db = new SQLite3('/mnt/sda1/sensor.db');`
-`$query = "INSERT INTO sensor_data (type, red, green, blue) VALUES( '$argv[1]', '$argv[2]', '$argv[3]', '$argv[4]' )";`
-`$db->exec($query);`
-`$db->close();`
-`?>`
+```
+#!/usr/bin/php-cli
+<?php
+$db = new SQLite3('/mnt/sda1/sensor.db');
+$query = "INSERT INTO sensor_data (type, red, green, blue) VALUES( '$argv[1]', '$argv[2]', '$argv[3]', '$argv[4]' )";
+$db->exec($query);
+$db->close();
+?>
+```
 
 ## Development
 
