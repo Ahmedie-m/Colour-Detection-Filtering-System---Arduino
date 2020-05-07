@@ -56,7 +56,7 @@ Then insert some filler data
 
 Then display the contents of the table
 
-`SELECT * FROM sensor_data`
+`SELECT * FROM sensor_data;`
 
 ### Creating the PHP-file that takes in the query
 
@@ -98,4 +98,5 @@ Ex: `192.168.1.165/stats/`
 
 ## Credits
 
-Big thanks to this guide: https://hackaday.io/project/27905-setting-up-the-linkit-c-cross-compiler/log/71201-wifi-server
+Big thanks to this guide on how to setup a server: https://hackaday.io/project/27905-setting-up-the-linkit-c-cross-compiler/log/71201-wifi-server
+Amazing guide for publishing data on the Arduino Yun locally: https://forum.arduino.cc/index.php?topic=309600.0
