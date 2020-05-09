@@ -3,7 +3,10 @@
 #include <Adafruit_TCS34725.h>
 #include <Process.h>
 #include <Bridge.h>
+#include <BridgeServer.h>
+#include <BridgeClient.h>
 
+BridgeServer server;
 
 const int openPos = 90;
 const int ripePos =  90;
@@ -17,14 +20,20 @@ boolean isOrangeInDetection = false;
 
 // pins
 int ultrasonicPins[2][2] {
-  {5, 6}, // Fruit Detection
-  {9, 10}, // Slider Detection
+  {7, 8}, // Fruit Detection // trig, echo
+  {9, 10}, // Slider Detection // trig, echo
 };
+
+int orangeFilterPin = 5;
+int orangeFatePin = 11;
 
 
 // initialize
 Servo orangeFilter;
 Servo orangeFate;
+
+// on/off boolean
+boolean machineStatus = true;
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 
@@ -51,6 +60,8 @@ float detectOrange(float red, float green, float blue){
 
 void setup() {
   Bridge.begin();
+    server.listenOnLocalhost();
+  server.begin();
   Serial.begin(9600);
   Serial.println("Color View Test!");
 
@@ -61,71 +72,89 @@ void setup() {
     while(1); // halt!
   }
 
-  // Servo 1 is connected to PWM pin 3
-  orangeFilter.attach(3);
+  // Servo 1 is connected to PWM pin 5
+  orangeFilter.attach(orangeFilterPin);
   // drive servo in basic
   orangeFilter.write(0);
   // Servo 2 is connected to PWM pin 11
-  orangeFate.attach(11);
+  orangeFate.attach(orangeFatePin);
   // drive servo in basic
   orangeFate.write(0);
   delay(1000);
 }
 
 void loop() {
-  float red, green, blue;
-  
-  tcs.setInterrupt(false);  // turn on LED
+  BridgeClient client = server.accept();
 
-  delay(60);  // takes 60ms to read
-
-  tcs.getRGB(&red, &green, &blue);
-
-  tcs.setInterrupt(true);  // turn off LED
-
-  if(Serial.available() > 0 ){
-    int com = Serial.read();
-    Serial.println(com - 48); // Arduino uses ACSII numbering, we need to minus 48
-    if (com == 0) {
-      ledControl(true); // turn off LED
-    }
-    if (com == 1) {
-      ledControl(false); // turn on LED
-    }
+  if (client) {
+    process(client);
   }
   
-  Serial.print("\tR:\t"); Serial.print(int(red));
-  Serial.print("\tG:\t"); Serial.print(int(green));
-  Serial.print("\tB:\t"); Serial.print(int(blue));
-  Serial.println("");
-
-  int orangeStatus = detectOrange(red, green, blue);
-
-   switch(orangeStatus){
-    case 1:
-      Serial.println("\tOUTPUT: ORANGE (RIPE)\t");
-      orangeSlider(orangeStatus);
-    break;
-    case 0:
-      Serial.println("\tOUTPUT: GREEN (RAW)\t");
-      orangeSlider(orangeStatus);
-    break;
-    default:
-      Serial.print("\tOUTPUT: NOT DETECTED\t");
-      Serial.print("Check #");
-      Serial.println(notDetectedCheck);
-      if(notDetectedCheck >= 3) {
-        notDetectedCheck = 0;
-        newOrange();
-        delay(4000);
-      }
-      delay(1500);
-    break;
+  if (machineStatus == true) {
+  
+    float red, green, blue;
+    
+    tcs.setInterrupt(false);  // turn on LED
+  
+    delay(60);  // takes 60ms to read
+  
+    tcs.getRGB(&red, &green, &blue);
+  
+    tcs.setInterrupt(true);  // turn off LED
+    
+    Serial.print("\tR:\t"); Serial.print(int(red));
+    Serial.print("\tG:\t"); Serial.print(int(green));
+    Serial.print("\tB:\t"); Serial.print(int(blue));
+    Serial.println("");
+  
+    int orangeStatus = detectOrange(red, green, blue);
+  
+     switch(orangeStatus){
+      case 1:
+        Serial.println("\tOUTPUT: ORANGE (RIPE)\t");
+        orangeSlider(orangeStatus);
+      break;
+      case 0:
+        Serial.println("\tOUTPUT: GREEN (RAW)\t");
+        orangeSlider(orangeStatus);
+      break;
+      default:
+        Serial.print("\tOUTPUT: NOT DETECTED\t");
+        Serial.print("Check #");
+        Serial.println(notDetectedCheck);
+        if(notDetectedCheck >= 3) {
+          notDetectedCheck = 0;
+          newOrange();
+          delay(4000);
+        }
+        delay(1500);
+      break;
+    }
+  }
+  else {
+    Serial.println("Machine turned off");
+    delay(300);
   }
 }
 
-int ledControl(boolean action){
-  tcs.setInterrupt(action);
+void process(BridgeClient client) {
+  // If there is a request, then read the URL command
+  String command = client.readStringUntil('/'); //Read in the string up to the frist
+  //forward dash "/".
+  command.trim();        //kill whitespace
+  if (command == "statusfilter") {
+    machineStatus = client.parseInt();
+    if (machineStatus == 1) {
+      machineStatus = true;
+    }
+    if (machineStatus == 0) {
+      machineStatus = false;
+    }
+  }
+  
+  // Close connection and free resources.
+  client.stop();
+  client.flush();
 }
 
 int newOrange(){
@@ -163,6 +192,7 @@ int orangeSlider(int orangeStatus){
   newOrange();
 }
 
+/*
 void postToThingSpeak(int value, int chartNum) {
   Process p;
   String cmd = "curl -d 'key=";
@@ -178,7 +208,7 @@ void postToThingSpeak(int value, int chartNum) {
   // do nothing until the process finishes, so you get the whole output:
   while(p.running());
   delay(5000); // we need to wait 15 seconds with the free plan before each request
-}
+}*/
 
 void updateArduinoDatabase(String type, int red, int green, int blue) {
   Process p;              

@@ -20,7 +20,7 @@ Install sqlite3-cli
 
 `opkg install sqlite3-cli`
 
-Install PHP and relevant libraries - Latest version of PHP as of now is 7.
+Install PHP and relevant libraries - Latest version of PHP as of now is 7
 
 `opkg install php7-cli php7-cgi php7-mod-sqlite3`
 
@@ -40,7 +40,7 @@ Then add
 
 `option index_page 'index.php'`
 
-### Creating the database file
+### Creating the SQLite database
 
 Do
 
@@ -58,7 +58,7 @@ Then display the contents of the table
 
 `SELECT * FROM sensor_data;`
 
-### Creating the PHP-file that takes in the query
+### Creating the PHP file that takes in the query
 
 Create the PHP file in the following area
 
@@ -76,6 +76,39 @@ $db->close();
 ?>
 ```
 
+### Creating the PHP file that displays your database results
+
+Create the PHP file in
+
+`nano /www/stats/database.php`
+
+Type this in
+
+```
+<?php
+$db = new SQLite3('/mnt/sda1/sensor.db');
+$results = $db->query('select * from sensor_data');
+$cols = $results->numColumns();
+print "<table width='400'  border='1' cellspacing='0' cellpadding='0'>\n";
+print "<tr>";
+for ($i = 0; $i < $cols; $i++) {
+        print "<th align='left'>".$results->columnName($i)."</th>";
+}
+print "</tr>\n";
+while ($row = $results->fetchArray()){
+        print "<tr>";
+        for ($i = 0; $i < $cols; $i++) {
+                print "<td>".$row[$i]."</td>";
+        } //end for
+        print "</tr>\n";
+}
+print "</table>\n";
+$db->close();
+?>
+```
+
+Your database will be viewed at `YourArduinoAddressHere/stats/database.php`
+
 ## Development
 
 Anything in the www folder on your Arduino Yun is your website
@@ -84,9 +117,11 @@ Anything in the www folder on your Arduino Yun is your website
 
 Create an index.php file in stats
 
+```
 <?php
   echo "Hello World, running PHP test!"
 ?>
+```
 
 Restart the uhttpd server
 
@@ -95,6 +130,15 @@ Restart the uhttpd server
 Your website should be on your Arduino's Address
 
 Ex: `192.168.1.165/stats/`
+
+## Other
+
+This was just created to test the capabilities of the Wi-Fi module on the Arduino Yun
+
+The color detection and sorting device can be turned off by going to `YourArduinoAddressHere/arduino/statusfilter/0/`
+
+And back on using The color detection and sorting device can be turned off by going to `YourArduinoAddressHere/arduino/statusfilter/1/`
+
 
 ## Credits
 
