@@ -8,15 +8,21 @@
 
 BridgeServer server;
 
+//Initial Positions for all
+const int initPos =  0;
+
+//Positions for new orange
 const int openPos = 90;
+
+//Positions for outcome boxes
+const int unknownPos = 0;
 const int ripePos =  90;
 const int rawPos =  180;
-const int initPos =  0;
+
 int ripeTotal = 0;
 int rawTotal = 0;
 int notDetectedCheck = 0;
 String postApiKey = "EIVSNOCRGC5SOS5Q";
-boolean isOrangeInDetection = false;
 
 // pins
 int ultrasonicPins[2][2] {
@@ -33,7 +39,9 @@ Servo orangeFilter;
 Servo orangeFate;
 
 // on/off boolean
-boolean machineStatus = true;
+boolean isMachineOn = true;
+// checks if an orange is in the detection room
+boolean isOrangeInDetection = false;
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 
@@ -60,7 +68,7 @@ float detectOrange(float red, float green, float blue){
 
 void setup() {
   Bridge.begin();
-    server.listenOnLocalhost();
+  server.listenOnLocalhost();
   server.begin();
   Serial.begin(9600);
   Serial.println("Color View Test!");
@@ -84,51 +92,63 @@ void setup() {
 }
 
 void loop() {
+  int fruitDetection = 8;
+  tcs.setInterrupt(true); // turn off LED when not used
   BridgeClient client = server.accept();
 
   if (client) {
     process(client);
   }
   
-  if (machineStatus == true) {
-  
-    float red, green, blue;
+  if (isMachineOn) {
+    if (!isOrangeInDetection) {
+      Serial.println(fruitDetection);
+      while (fruitDetection >= 4) {
+        fruitDetection = ultrasonicDetect(1);
+        Serial.println("MACHINE: No fruit in detection area...");
+        Serial.println(fruitDetection);
+      }
+      isOrangeInDetection = true;
+    }
     
-    tcs.setInterrupt(false);  // turn on LED
-  
-    delay(60);  // takes 60ms to read
-  
-    tcs.getRGB(&red, &green, &blue);
-  
-    tcs.setInterrupt(true);  // turn off LED
+    if (isOrangeInDetection) {
+      float red, green, blue;
+      
+      tcs.setInterrupt(false);  // turn on LED
     
-    Serial.print("\tR:\t"); Serial.print(int(red));
-    Serial.print("\tG:\t"); Serial.print(int(green));
-    Serial.print("\tB:\t"); Serial.print(int(blue));
-    Serial.println("");
+      delay(60);  // takes 60ms to read
+    
+      tcs.getRGB(&red, &green, &blue);
+    
+      tcs.setInterrupt(true);  // turn off LED
+      
+      Serial.print("\tR:\t"); Serial.print(int(red));
+      Serial.print("\tG:\t"); Serial.print(int(green));
+      Serial.print("\tB:\t"); Serial.print(int(blue));
+      Serial.println("");
   
-    int orangeStatus = detectOrange(red, green, blue);
-  
-     switch(orangeStatus){
-      case 1:
-        Serial.println("\tOUTPUT: ORANGE (RIPE)\t");
-        orangeSlider(orangeStatus);
-      break;
-      case 0:
-        Serial.println("\tOUTPUT: GREEN (RAW)\t");
-        orangeSlider(orangeStatus);
-      break;
-      default:
-        Serial.print("\tOUTPUT: NOT DETECTED\t");
-        Serial.print("Check #");
-        Serial.println(notDetectedCheck);
-        if(notDetectedCheck >= 3) {
-          notDetectedCheck = 0;
-          newOrange();
-          delay(4000);
-        }
-        delay(1500);
-      break;
+      int orangeStatus = detectOrange(red, green, blue);
+    
+       switch(orangeStatus){
+        case 1:
+          Serial.println("\tOUTPUT: ORANGE (RIPE)\t");
+          orangeSlider(orangeStatus);
+        break;
+        case 0:
+          Serial.println("\tOUTPUT: GREEN (RAW)\t");
+          orangeSlider(orangeStatus);
+        break;
+        default:
+          Serial.print("\tOUTPUT: NOT DETECTED\t");
+          Serial.print("Check #");
+          Serial.println(notDetectedCheck);
+          if(notDetectedCheck >= 3) {
+            notDetectedCheck = 0;
+            orangeSlider(orangeStatus);
+          }
+          delay(1500);
+        break;
+      }
     }
   }
   else {
@@ -139,16 +159,15 @@ void loop() {
 
 void process(BridgeClient client) {
   // If there is a request, then read the URL command
-  String command = client.readStringUntil('/'); //Read in the string up to the frist
-  //forward dash "/".
+  String command = client.readStringUntil('/'); //Read in the string up to the first forward dash "/".
   command.trim();        //kill whitespace
   if (command == "statusfilter") {
-    machineStatus = client.parseInt();
-    if (machineStatus == 1) {
-      machineStatus = true;
+    isMachineOn = client.parseInt();
+    if (isMachineOn == 1) {
+      isMachineOn = true;
     }
-    if (machineStatus == 0) {
-      machineStatus = false;
+    if (isMachineOn == 0) {
+      isMachineOn = false;
     }
   }
   
@@ -158,10 +177,12 @@ void process(BridgeClient client) {
 }
 
 int newOrange(){
+  isOrangeInDetection = false;
   Serial.println("MACHINE: Letting in a new orange...");
   orangeFilter.write(openPos);  // No detection rotate 90 to let an Orange in (after 3 checks);
   delay(1000);
   orangeFilter.write(initPos);
+  delay(200); // give time for the sensor to pick up the orange in the detection room
 }
 
 int orangeSlider(int orangeStatus){
@@ -169,7 +190,7 @@ int orangeSlider(int orangeStatus){
   if(orangeStatus == 1){
     Serial.println("MACHINE: Moving to ripe box...");
     orangeFate.write(ripePos);    // Rotate 90 to let the Orange in Ripe Box
-    while (sliderLocation > 7) {
+    while (sliderLocation > 55) {
       sliderLocation = ultrasonicDetect(1);
       Serial.print("The slider is ");
       Serial.println(sliderLocation);
@@ -177,10 +198,21 @@ int orangeSlider(int orangeStatus){
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos);  // Go to initial Position
   }
+  if(orangeStatus == -1){
+    Serial.println("MACHINE: Moving to unknown box...");
+    orangeFate.write(unknownPos);    // Rotate 180 to let the Orange in Raw Box
+    while (sliderLocation > 35) {
+      sliderLocation = ultrasonicDetect(1);
+      Serial.print("The slider is ");
+      Serial.println(sliderLocation);
+    }              
+    Serial.println("MACHINE: Moving back to initial position...");
+    orangeFate.write(initPos); // Go to initial Position
+  }
   if(orangeStatus == 0){
     Serial.println("MACHINE: Moving to raw box...");
     orangeFate.write(rawPos);    // Rotate 180 to let the Orange in Raw Box
-    while (sliderLocation > 14) {
+    while (sliderLocation > 15) {
       sliderLocation = ultrasonicDetect(1);
       Serial.print("The slider is ");
       Serial.println(sliderLocation);
@@ -220,11 +252,11 @@ void updateArduinoDatabase(String type, int red, int green, int blue) {
   p.run();
 }
 
-int ultrasonicDetect(int slider) {
+int ultrasonicDetect(int pins) {
   long duration;
   int trigPin, echoPin, cm;
 
-  switch(slider){
+  switch(pins){
     case 1:
     trigPin = ultrasonicPins[1][0];
     echoPin = ultrasonicPins[1][1];
