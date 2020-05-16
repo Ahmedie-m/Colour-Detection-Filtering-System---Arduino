@@ -22,7 +22,7 @@ Install sqlite3-cli
 
 Install PHP and relevant libraries - Latest version of PHP as of now is 7
 
-`opkg install php7-cli php7-cgi php7-mod-sqlite3`
+`opkg install php7-cli php7-cgi php7-mod-sqlite3 php7-mod-json`
 
 Install nano
 
@@ -130,6 +130,17 @@ Restart the uhttpd server
 Your website should be on your Arduino's Address
 
 Ex: `192.168.1.165/stats/`
+
+
+### SQLite3 Commands
+
+To clean up the database
+
+`DELETE FROM sensor_data;`
+
+To quit SQLite
+
+`.quit`
 
 ## Other
 
