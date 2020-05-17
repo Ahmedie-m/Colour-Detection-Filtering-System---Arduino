@@ -202,7 +202,8 @@ int orangeSlider(int orangeStatus){
     while (sliderLocation > 55) {
       sliderLocation = ultrasonicDetect(1);
       Serial.print("The slider is ");
-      Serial.println(sliderLocation);
+      Serial.print(sliderLocation);
+      Serial.println(" cm away");
     }
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos);  // Go to initial Position
@@ -213,7 +214,8 @@ int orangeSlider(int orangeStatus){
     while (sliderLocation > 35) {
       sliderLocation = ultrasonicDetect(1);
       Serial.print("The slider is ");
-      Serial.println(sliderLocation);
+      Serial.print(sliderLocation);
+      Serial.println(" cm away");
     }              
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos); // Go to initial Position
@@ -224,7 +226,8 @@ int orangeSlider(int orangeStatus){
     while (sliderLocation > 15) {
       sliderLocation = ultrasonicDetect(1);
       Serial.print("The slider is ");
-      Serial.println(sliderLocation);
+      Serial.print(sliderLocation);
+      Serial.println(" cm away");
     }              
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos); // Go to initial Position
