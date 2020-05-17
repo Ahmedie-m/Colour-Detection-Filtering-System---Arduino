@@ -1,3 +1,4 @@
+// necessary libraries
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_TCS34725.h>
@@ -6,33 +7,37 @@
 #include <BridgeServer.h>
 #include <BridgeClient.h>
 
+// initializing library variables
 BridgeServer server;
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 
-//Initial Positions for all
+// initial Positions for all
 const int initPos =  0;
 
-//Positions for new orange
+// positions for new orange
 const int openPos = 90;
 
-//Positions for outcome boxes
+// positions for outcome boxes
 const int unknownPos = 0;
 const int ripePos =  90;
 const int rawPos =  180;
 
+// ThingSpeak parameters
 int ripeTotal = 0;
 int rawTotal = 0;
-int notDetectedCheck = 0;
 String postApiKey = "EIVSNOCRGC5SOS5Q";
+
+// counters
+int noColorDetectedCheck = 0;
+int noFruitDetectedCheck = 0;
 
 // pins
 int ultrasonicPins[2][2] {
   {7, 8}, // Fruit Detection // trig, echo
   {9, 10}, // Slider Detection // trig, echo
 };
-
 int orangeFilterPin = 5;
 int orangeFatePin = 11;
-
 
 // initialize
 Servo orangeFilter;
@@ -42,29 +47,6 @@ Servo orangeFate;
 boolean isMachineOn = true;
 // checks if an orange is in the detection room
 boolean isOrangeInDetection = false;
-
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
-
-float detectOrange(float red, float green, float blue){
-  if(( red >  130 )  &&  ( green <  100 )  &&  ( blue <  60 )){
-    notDetectedCheck = 0;
-    ripeTotal++;
-    // postToThingSpeak(ripeTotal, 1);
-    updateArduinoDatabase("ripe", red, green, blue);
-    return 1; // ripe
-  }
-  if(( red < 100 )  &&  ( green >  100 )  &&  ( blue <  100 )){
-    notDetectedCheck = 0;
-    rawTotal++;
-    // postToThingSpeak(rawTotal, 2);
-    updateArduinoDatabase("raw", red, green, blue);
-    return 0; // raw
-  }
-  else{
-    notDetectedCheck++;
-    return -1; // needs another check
-  }
-}
 
 void setup() {
   Bridge.begin();
@@ -102,12 +84,18 @@ void loop() {
   
   if (isMachineOn) {
     if (!isOrangeInDetection) {
-      Serial.println(fruitDetection);
       while (fruitDetection >= 4) {
         fruitDetection = ultrasonicDetect(1);
-        Serial.println("MACHINE: No fruit in detection area...");
-        Serial.println(fruitDetection);
+        noFruitDetectedCheck++;
+        Serial.print("MACHINE: No fruit in detection area - Check #");
+        Serial.println(noFruitDetectedCheck);
+        delay(500);
+        if(noFruitDetectedCheck >= 3) {
+          noFruitDetectedCheck = 0;
+          newOrange();
+        }
       }
+      noFruitDetectedCheck = 0;
       isOrangeInDetection = true;
     }
     
@@ -141,9 +129,9 @@ void loop() {
         default:
           Serial.print("\tOUTPUT: NOT DETECTED\t");
           Serial.print("Check #");
-          Serial.println(notDetectedCheck);
-          if(notDetectedCheck >= 3) {
-            notDetectedCheck = 0;
+          Serial.println(noColorDetectedCheck);
+          if(noColorDetectedCheck >= 3) {
+            noColorDetectedCheck = 0;
             orangeSlider(orangeStatus);
           }
           delay(1500);
@@ -154,6 +142,27 @@ void loop() {
   else {
     Serial.println("Machine turned off");
     delay(300);
+  }
+}
+
+float detectOrange(float red, float green, float blue){
+  if(( red >  130 )  &&  ( green <  100 )  &&  ( blue <  60 )){
+    noColorDetectedCheck = 0;
+    ripeTotal++;
+    // postToThingSpeak(ripeTotal, 1);
+    updateArduinoDatabase("ripe", red, green, blue);
+    return 1; // ripe
+  }
+  if(( red < 100 )  &&  ( green >  100 )  &&  ( blue <  100 )){
+    noColorDetectedCheck = 0;
+    rawTotal++;
+    // postToThingSpeak(rawTotal, 2);
+    updateArduinoDatabase("raw", red, green, blue);
+    return 0; // raw
+  }
+  else{
+    noColorDetectedCheck++;
+    return -1; // needs another check
   }
 }
 
@@ -285,7 +294,7 @@ int ultrasonicDetect(int pins) {
   duration = pulseIn(echoPin, HIGH);
  
   // Convert the time into a distance
-  cm = (duration/2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
+  cm = (duration / 2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
 
   delay(500);
 
