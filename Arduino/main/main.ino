@@ -85,7 +85,7 @@ void loop() {
   if (isMachineOn) {
     if (!isOrangeInDetection) {
       while (fruitDetection >= 4) {
-        fruitDetection = ultrasonicDetect(1);
+        fruitDetection = ultrasonicDetect(0);
         noFruitDetectedCheck++;
         Serial.print("MACHINE: No fruit in detection area - Check #");
         Serial.println(noFruitDetectedCheck);
