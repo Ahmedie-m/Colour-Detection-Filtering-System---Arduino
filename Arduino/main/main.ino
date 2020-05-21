@@ -74,26 +74,35 @@ void setup() {
 }
 
 void loop() {
-  int fruitDetection = 8;
+  int fruitDetection;
   tcs.setInterrupt(true); // turn off LED when not used
   BridgeClient client = server.accept();
 
   if (client) {
     process(client);
   }
+
+  fruitDetection = ultrasonicDetect(0);
   
   if (isMachineOn) {
     if (!isOrangeInDetection) {
-      while (fruitDetection >= 4) {
+      while (fruitDetection > 4 && isMachineOn) {
+        fruitDetection = 8;
         fruitDetection = ultrasonicDetect(0);
-        noFruitDetectedCheck++;
-        Serial.print("MACHINE: No fruit in detection area - Check #");
-        Serial.println(noFruitDetectedCheck);
-        delay(500);
+        Serial.print("Current distance ");
+        Serial.print(fruitDetection);
+        Serial.println(" cm");
         if(noFruitDetectedCheck >= 3) {
           noFruitDetectedCheck = 0;
           newOrange();
         }
+        if(!isMachineOn) {
+          break;
+        }
+        noFruitDetectedCheck++;
+        Serial.print("MACHINE: No fruit in detection area - Check #");
+        Serial.println(noFruitDetectedCheck);
+        delay(500);
       }
       noFruitDetectedCheck = 0;
       isOrangeInDetection = true;
@@ -196,22 +205,10 @@ int newOrange(){
 
 int orangeSlider(int orangeStatus){
   int sliderLocation; 
-  if(orangeStatus == 1){
-    Serial.println("MACHINE: Moving to ripe box...");
-    orangeFate.write(ripePos);    // Rotate 90 to let the Orange in Ripe Box
-    while (sliderLocation > 55) {
-      sliderLocation = ultrasonicDetect(1);
-      Serial.print("The slider is ");
-      Serial.print(sliderLocation);
-      Serial.println(" cm away");
-    }
-    Serial.println("MACHINE: Moving back to initial position...");
-    orangeFate.write(initPos);  // Go to initial Position
-  }
   if(orangeStatus == -1){
     Serial.println("MACHINE: Moving to unknown box...");
     orangeFate.write(unknownPos);    // Rotate 180 to let the Orange in Raw Box
-    while (sliderLocation > 35) {
+    while (sliderLocation > 55) {
       sliderLocation = ultrasonicDetect(1);
       Serial.print("The slider is ");
       Serial.print(sliderLocation);
@@ -219,6 +216,18 @@ int orangeSlider(int orangeStatus){
     }              
     Serial.println("MACHINE: Moving back to initial position...");
     orangeFate.write(initPos); // Go to initial Position
+  }
+  if(orangeStatus == 1){
+    Serial.println("MACHINE: Moving to ripe box...");
+    orangeFate.write(ripePos);    // Rotate 90 to let the Orange in Ripe Box
+    while (sliderLocation > 35) {
+      sliderLocation = ultrasonicDetect(1);
+      Serial.print("The slider is ");
+      Serial.print(sliderLocation);
+      Serial.println(" cm away");
+    }
+    Serial.println("MACHINE: Moving back to initial position...");
+    orangeFate.write(initPos);  // Go to initial Position
   }
   if(orangeStatus == 0){
     Serial.println("MACHINE: Moving to raw box...");
