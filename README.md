@@ -148,7 +148,7 @@ This was just created to test the capabilities of the Wi-Fi module on the Arduin
 
 The color detection and sorting device can be turned off by going to `YourArduinoAddressHere/arduino/statusfilter/0/`
 
-And back on using The color detection and sorting device can be turned off by going to `YourArduinoAddressHere/arduino/statusfilter/1/`
+And back on using `YourArduinoAddressHere/arduino/statusfilter/1/`
 
 
 ## Credits
